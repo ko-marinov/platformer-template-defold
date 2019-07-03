@@ -1,0 +1,26 @@
+go.property("health", 100)
+
+require "modules.common"
+
+local function InvulTimerCallback(self, handle, time_elapsed)
+	self.vulnerable = true
+end
+
+function init(self)
+	self.vulnerable = true
+	self.invul_timer = timer.INVALID_TIMER_HANDLE
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("damage") and self.vulnerable then
+		msg.post(".", msgtype_trigger, { id = trigger_damage })
+		self.health = self.health - message.damage
+		if self.health <= 0 then
+			self.health = 0
+			msg.post(".", hash("die"))
+		else
+			self.vulnerable = false
+			self.invul_timer = timer.delay(2, false, InvulTimerCallback)
+		end
+	end
+end

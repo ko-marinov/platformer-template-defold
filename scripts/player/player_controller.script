@@ -1,0 +1,104 @@
+-- stupid horizontal collision of floor solved by 10k acceleration
+
+go.property("gravity", -700)
+
+local MAX_HSPEED = 200
+local MAX_VSPEED = 200
+
+
+require "modules.common"
+
+function printVec(v, name)
+	local str = ""
+	if name ~= nil then
+		str = name .. ": "
+	end
+	---print(str .. "(" .. v.x .. ", " .. v.y .. ", " .. v.z .. ")")
+end
+
+local function update_velocity(self, dt)
+	local v = self.velocity
+
+	-- Vertical velocity
+	if self.ground_contact then
+		v.y = 0
+	else
+		v.y = v.y + self.gravity * dt
+		if v.y < -MAX_VSPEED then
+			v.y = -MAX_VSPEED
+		end
+	end
+
+	-- Horizontal velocity
+	-- Control > smoothness
+	if self.dir == 0 then
+		v.x = 0
+	else
+		v.x = self.dir * MAX_HSPEED
+	end
+	self.velocity = v
+end
+
+local function handle_obstacle_contact(self, normal, distance)
+	if distance > 0 then
+		-- First, project the accumulated correction onto
+		-- the penetration vector
+		local proj = vmath.project(self.correction, normal * distance)
+		if proj < 1 then
+			-- Only care for projections that does not overshoot.
+			local comp = (distance - distance * proj) * normal
+			-- Apply compensation
+			go.set_position(go.get_position() + comp)
+			-- Accumulate correction done
+			self.correction = self.correction + comp
+		end
+	end
+end
+
+function init(self)
+	self.frame_num = 0
+	self.dir = 0
+	self.correction = vmath.vector3()
+	self.velocity = vmath.vector3(0, 0, 0)
+	self.ground_contact = false
+	--self.attack_counter = 1
+	--self.attack_request = false
+	--self.drop_attack_counter_timer = timer.INVALID_TIMER_HANDLE
+	--self.attackPoint = vmath.vector3()
+	msg.post(".", "acquire_input_focus")
+end
+
+function final(self)
+	
+end
+
+function update(self, dt)
+	update_velocity(self, dt)
+	go.set_position(go.get_position() + self.velocity * dt)
+	
+	self.correction = vmath.vector3()
+	self.frame_num = self.frame_num + 1
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("contact_point_response") then
+		if message.group == hash("level") then
+			handle_obstacle_contact(self, message.normal, message.distance)
+		end
+	elseif message_id == msgtype_param then
+		if message.id == param_move then
+			self.dir = message.value
+		end
+	elseif message_id == msgtype_tag then
+		if message.id == tag_grounded then
+			self.ground_contact = message.value
+		end
+	elseif message_id == hash("die") then
+		
+	end
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Remove self function if not needed
+end

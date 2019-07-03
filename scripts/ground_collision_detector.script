@@ -1,0 +1,27 @@
+require "modules.common"
+
+local msgtype_trigger_response = hash("trigger_response")
+local ground_group = hash("level")
+
+function init(self)
+	self.isGrounded = false
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == msgtype_trigger_response and message.other_group == ground_group then
+		if message.enter then
+			assert(not self.isGrounded)
+			self.isGrounded = true
+			-- print("[Ground Check]: true")
+		else
+			assert(self.isGrounded)
+			self.isGrounded = false
+			-- print("[Ground Check]: false")
+		end
+		msg.post("hero", msgtype_tag, { id = tag_grounded, value = self.isGrounded })
+	elseif message_id == msgtype_check_tag then
+		if message.id == tag_grounded then
+			msg.post(sender, msgtype_tag, { id = tag_grounded, value = self.isGrounded })
+		end
+	end
+end

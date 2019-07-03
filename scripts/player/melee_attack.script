@@ -1,0 +1,44 @@
+go.property("damageDeal", 100)
+
+require "modules.common"
+
+local function updateAttackPoint(self, dir)
+	local localAttackPoint = vmath.vector3(dir * 12, -3, 0)
+	go.set_position(localAttackPoint, "attackTriggerArea")
+end
+
+local function process(self, go_id)
+	if self.collided_objects[go_id] then return end
+
+	self.collided_objects[go_id] = true
+	local url = msg.url()
+	url.path = go_id
+	url.fragment = "property_health"
+	msg.post(url, hash("damage"), { damage = self.damageDeal })
+end
+
+function init(self)
+	self.collided_objects = {}
+	msg.post("attackTriggerArea#collisionobject", "disable")
+
+	updateAttackPoint(self, 1)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == msgtype_tag and message.id == tag_attack then
+		if message.value then
+			self.collided_objects = {}
+			msg.post("attackTriggerArea#collisionobject", "enable")
+		else
+			msg.post("attackTriggerArea#collisionobject", "disable")
+		end
+	elseif message_id == msgtype_param and message.id == param_move then
+		if message.value ~= 0 then
+			updateAttackPoint(self, message.value)
+		end
+	elseif message_id == hash("melee_collision") then
+		if message.enter then 
+			process(self, message.other_id) 
+		end
+	end
+end

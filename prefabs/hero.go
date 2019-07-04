@@ -60,7 +60,7 @@ components {
 }
 components {
   id: "property_health"
-  component: "/scripts/property_health.script"
+  component: "/scripts/properties/property_health.script"
   position {
     x: 0.0
     y: 0.0

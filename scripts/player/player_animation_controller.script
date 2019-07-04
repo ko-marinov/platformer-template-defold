@@ -14,20 +14,41 @@ local fsm = moduleFsm.create({
 		{ name = "damaged", 		from = "*", 								to = "hurt"			},
 		{ name = "death", 			from = "*", 								to = "dead" 		},
 		{ name = "stopfall", 		from = "falling", 							to = "idle" 		},
-		{ name = "toidle",	 		from = "*", 								to = "idle" 		}
+		{ name = "toidle",	 		from = "*", 								to = "idle" 		},
+		{ name = "jump",			from = { "idle", "running" },				to = "jumpup"		}
 	},
 })
 
 -- fsm extension --
 fsm.blackboard					= {}
 fsm.blackboard[param_move]		= 0
+fsm.blackboard[param_vvel]		= 0
 fsm.blackboard[tag_grounded]	= false
 fsm.blackboard[tag_attack]		= false
 fsm.blackboard[tag_hurt]		= false
 
+
+-- TODO: temporary implementation, attack MUST be refactored
+-- on enter state attack1
+local attack_num = 1
+local attack_request = false
+local attack_anim_in_progress = false
+
+local function reset_attack_tag(self)
+	attack_anim_in_progress = false
+	msg.post(".", msgtype_tag, { id = tag_attack, value = false })
+end
+
+local function playAnim(self, anim_id)
+	-- when interrupt animation "animation_done" is not come
+	-- so reset all flags manually
+	reset_attack_tag(self)
+	msg.post("#sprite", "play_animation", { id = anim_id })
+end
+
 -- on enter state idle
 function fsm:onidle(event, from, to)
-	msg.post("#sprite", "play_animation", { id = hash("idle") })
+	playAnim(self, hash("idle"))
 end
 
 function fsm:onupdateidle(dt)
@@ -43,7 +64,7 @@ end
 
 -- on enter state running
 function fsm:onrunning(event, from, to)
-	msg.post("#sprite", "play_animation", { id = hash("run") })
+	playAnim(self, hash("run"))
 end
 
 function fsm:onupdaterunning(dt)
@@ -57,15 +78,9 @@ function fsm:onupdaterunning(dt)
 	end
 end
 
--- TODO: temporary implementation, attack MUST be refactored
--- on enter state attack1
-local attack_num = 1
-local attack_request = false
-local attack_anim_in_progress = false
-
 function fsm:onattacking(event, from, to)
 	local attackAnim = hash("attack" .. attack_num)
-	msg.post("#sprite", "play_animation", { id = attackAnim })
+	playAnim(self, attackAnim)
 	msg.post(".", msgtype_tag, { id = tag_attack, value = true })
 	attack_request = false
 	attack_anim_in_progress = true
@@ -81,13 +96,9 @@ function fsm:onbeforeattack(event, from, to)
 	return true
 end
 
-function fsm:onattackfinished(event, from, to)
-	msg.post(".", msgtype_tag, { id = tag_attack, value = false })
-end
-
 function fsm:onmessageattacking(message_id, message, sender)
 	if message_id == hash("animation_done") then
-		attack_anim_in_progress = false
+		reset_attack_tag(self)
 		if attack_request == true then
 			self:attack()
 		else
@@ -98,7 +109,7 @@ end
 
 -- on enter state falling
 function fsm:onfalling(event, from, to)
-	msg.post("#sprite", "play_animation", { id = hash("fall") })
+	playAnim(self, hash("fall"))
 end
 
 function fsm:onupdatefalling(dt)
@@ -112,7 +123,7 @@ end
 
 -- on enter state hurt
 function fsm:onhurt(event, from, to)
-	msg.post("#sprite", "play_animation", { id = hash("hurt") })
+	playAnim(self, hash("hurt"))
 	msg.post(".", msgtype_tag, { id = tag_hurt, value = true })
 end
 
@@ -125,7 +136,7 @@ end
 
 -- on enter state dead
 function fsm:ondead(event, from, to)
-	msg.post("#sprite", "play_animation", { id = hash("die") })
+	playAnim(self, hash("die"))
 end
 
 -- For debug purpose --

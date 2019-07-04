@@ -22,5 +22,7 @@ function on_message(self, message_id, message, sender)
 			self.vulnerable = false
 			self.invul_timer = timer.delay(2, false, InvulTimerCallback)
 		end
+	elseif message_id == hash("gethp") then
+		msg.post(sender, hash("ongethp"), { hp = self.health })
 	end
 end

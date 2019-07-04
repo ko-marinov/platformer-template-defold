@@ -4,6 +4,7 @@ go.property("gravity", -700)
 
 local MAX_HSPEED = 200
 local MAX_VSPEED = 200
+local JUMP_IMPULSE = 250
 
 
 require "modules.common"
@@ -20,7 +21,7 @@ local function update_velocity(self, dt)
 	local v = self.velocity
 
 	-- Vertical velocity
-	if self.ground_contact then
+	if self.ground_contact and v.y <= 0 then
 		v.y = 0
 	else
 		v.y = v.y + self.gravity * dt
@@ -75,6 +76,7 @@ end
 function update(self, dt)
 	update_velocity(self, dt)
 	go.set_position(go.get_position() + self.velocity * dt)
+	msg.post(".", msgtype_param, { id = param_vvel, value = self.velocity.y })
 	
 	self.correction = vmath.vector3()
 	self.frame_num = self.frame_num + 1
@@ -92,6 +94,12 @@ function on_message(self, message_id, message, sender)
 	elseif message_id == msgtype_tag then
 		if message.id == tag_grounded then
 			self.ground_contact = message.value
+		end
+	elseif message_id == msgtype_trigger then
+		if message.id == trigger_damage then
+			-- handle on damage received
+		elseif message.id == trigger_jump then
+			self.velocity.y = JUMP_IMPULSE
 		end
 	elseif message_id == hash("die") then
 		

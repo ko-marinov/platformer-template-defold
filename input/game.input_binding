@@ -6,6 +6,10 @@ key_trigger {
   input: KEY_A
   action: "left"
 }
+key_trigger {
+  input: KEY_SPACE
+  action: "jump"
+}
 mouse_trigger {
   input: MOUSE_BUTTON_LEFT
   action: "attack"

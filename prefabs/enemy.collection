@@ -1,7 +1,7 @@
 name: "default"
 instances {
   id: "body"
-  prototype: "/prefabs/hero.go"
+  prototype: "/prefabs/enemy.go"
   children: "attackTriggerArea"
   children: "groundTriggerArea"
   position {
@@ -14,14 +14,6 @@ instances {
     y: 0.0
     z: 0.0
     w: 1.0
-  }
-  component_properties {
-    id: "melee_attack"
-    properties {
-      id: "attackSpeed"
-      value: "3.0"
-      type: PROPERTY_TYPE_NUMBER
-    }
   }
   scale3 {
     x: 1.0
@@ -55,8 +47,8 @@ embedded_instances {
   "mass: 0.0\\n"
   "friction: 0.1\\n"
   "restitution: 0.5\\n"
-  "group: \\\"player_weapon\\\"\\n"
-  "mask: \\\"enemy\\\"\\n"
+  "group: \\\"enemy_weapon\\\"\\n"
+  "mask: \\\"player\\\"\\n"
   "embedded_collision_shape {\\n"
   "  shapes {\\n"
   "    shape_type: TYPE_SPHERE\\n"

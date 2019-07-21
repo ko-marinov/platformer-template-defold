@@ -1,7 +1,7 @@
 local function createOnTimerElapsed(self, handle, time_elapsed)
-	factory.create("#factory")
+	collectionfactory.create("#factory")
 end
 
 function init(self)
-	self.timer = timer.delay(2, true, createOnTimerElapsed)
+	--self.timer = timer.delay(2, true, createOnTimerElapsed)
 end

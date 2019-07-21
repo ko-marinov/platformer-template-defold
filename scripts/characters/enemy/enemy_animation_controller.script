@@ -1,0 +1,18 @@
+local moduleAnimFsm = require "modules.fsm.animation.enemy"
+
+function init(self)
+	self.fsm = moduleAnimFsm.new()
+end
+
+function update(self, dt)
+	self.fsm.update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+	self.fsm.on_message(message_id, message, sender)
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Remove this function if not needed
+end

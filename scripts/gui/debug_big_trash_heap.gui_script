@@ -9,7 +9,7 @@ function final(self)
 end
 
 function update(self, dt)
-	msg.post("/hero/hero#property_health", hash("gethp"))
+	msg.post("/hero/body#property_health", hash("gethp"))
 end
 
 function on_message(self, message_id, message, sender)

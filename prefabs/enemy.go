@@ -1,6 +1,51 @@
 components {
-  id: "enemy_controller"
-  component: "/scripts/enemy_controller.script"
+  id: "controller"
+  component: "/scripts/characters/enemy/enemy_controller.script"
+  position {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+}
+components {
+  id: "melee_attack"
+  component: "/scripts/characters/player/melee_attack.script"
+  position {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+}
+components {
+  id: "animation_controller"
+  component: "/scripts/characters/enemy/enemy_animation_controller.script"
+  position {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+}
+components {
+  id: "input_controller"
+  component: "/scripts/characters/enemy/enemy_input_controller.script"
   position {
     x: 0.0
     y: 0.0
@@ -16,6 +61,21 @@ components {
 components {
   id: "property_health"
   component: "/scripts/properties/property_health.script"
+  position {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+}
+components {
+  id: "ai_controller"
+  component: "/scripts/characters/enemy/enemy_ai_controller.script"
   position {
     x: 0.0
     y: 0.0
@@ -57,8 +117,8 @@ embedded_components {
   "friction: 0.1\n"
   "restitution: 0.5\n"
   "group: \"enemy\"\n"
-  "mask: \"default\"\n"
   "mask: \"level\"\n"
+  "mask: \"player_weapon\"\n"
   "embedded_collision_shape {\n"
   "  shapes {\n"
   "    shape_type: TYPE_BOX\n"

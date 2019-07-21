@@ -1,0 +1,27 @@
+go.property(animFsm, false)
+
+local function IsCategoryEnabled(category)
+	
+end
+
+function init(self)
+	self.isActive = true
+	
+end
+
+function on_message(self, message_id, message, sender)
+	if self.isActive ~= true then
+		return
+	end
+	
+	if message_id == hash("msgtype_log") then
+		if message.category
+		print(message)
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("toggle_logger") then
+		self.isActive = ~self.isActive
+	end
+end

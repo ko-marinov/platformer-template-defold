@@ -1,11 +1,5 @@
 require "modules.common"
 
--- Input controls
-local input_left 	= hash("left")
-local input_right 	= hash("right")
-local input_attack 	= hash("attack")
-local input_jump	= hash("jump")
-
 -- Input states
 local STAY		= hash("STAY")
 local RUN		= hash("RUN")
@@ -30,6 +24,23 @@ local function isActionPermitted(self, action_id)
 	return false
 end
 
+local function processInput(self, action_id, action)
+	if not isActionPermitted(self, action_id) then
+		return
+	end
+
+	if action_id == input_left then
+		self.move_hor = -1
+	elseif action_id == input_right then
+		self.move_hor = 1
+	elseif action_id == input_attack then
+		self.attack_input = true
+	elseif action_id == input_jump then
+		msg.post(".", msgtype_trigger, { id = trigger_jump })
+		-- self.jump_input = action.pressed or action.repeated
+	end
+end
+
 function init(self)
 	-- Add initialization code here
 	-- Remove this function if not needed
@@ -39,6 +50,8 @@ function init(self)
 	self.grounded = nil
 	self.hurt = nil
 	self.attack = nil
+	self.attack_input = false
+	self.jump_input = false
 	msg.post(".", msgtype_check_tag, { id = tag_grounded })
 	msg.post(".", msgtype_check_tag, { id = tag_hurt })
 	msg.post(".", msgtype_check_tag, { id = tag_attack })
@@ -52,6 +65,7 @@ end
 function update(self, dt)
 	-- send updates
 	msg.post(".", msgtype_param, { id = param_move, value = self.move_hor })
+	msg.post(".", msgtype_param, { id = param_attack_input, value = self.attack_input })
 
 	-- update input state
 	if self.hurt then
@@ -73,6 +87,7 @@ function update(self, dt)
 
 	-- clear
 	self.move_hor = 0
+	self.attack_input = false
 end
 
 function on_message(self, message_id, message, sender)
@@ -92,17 +107,5 @@ function on_message(self, message_id, message, sender)
 end
 
 function on_input(self, action_id, action)
-	if not isActionPermitted(self, action_id) then
-		return
-	end
-
-	if action_id == input_left then
-		self.move_hor = -1
-	elseif action_id == input_right then
-		self.move_hor = 1
-	elseif action_id == input_attack then
-		msg.post(".", msgtype_trigger, { id = trigger_attack } )
-	elseif action_id == input_jump then
-		msg.post(".", msgtype_trigger, { id = trigger_jump })
-	end
+	processInput(self, action_id, action)
 end

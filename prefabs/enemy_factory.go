@@ -15,8 +15,8 @@ components {
 }
 embedded_components {
   id: "factory"
-  type: "factory"
-  data: "prototype: \"/prefabs/enemy.go\"\n"
+  type: "collectionfactory"
+  data: "prototype: \"/prefabs/enemy.collection\"\n"
   "load_dynamically: false\n"
   ""
   position {

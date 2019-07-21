@@ -18,7 +18,8 @@ function on_message(self, message_id, message, sender)
 			self.isGrounded = false
 			-- print("[Ground Check]: false")
 		end
-		msg.post("hero", msgtype_tag, { id = tag_grounded, value = self.isGrounded })
+		-- TODO: eliminate hardcoded 'body' string
+		msg.post("body", msgtype_tag, { id = tag_grounded, value = self.isGrounded })
 	elseif message_id == msgtype_check_tag then
 		if message.id == tag_grounded then
 			msg.post(sender, msgtype_tag, { id = tag_grounded, value = self.isGrounded })

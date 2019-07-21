@@ -1,0 +1,24 @@
+go.property("gravity", -700)
+
+local moduleMovement = require "modules.ground_movement"
+
+function init(self)
+	self.mv = moduleMovement.new(self.gravity)
+end
+
+function final(self)
+
+end
+
+function update(self, dt)
+	self.mv.update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+	self.mv.on_message(message_id, message, sender)
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Remove self function if not needed
+end

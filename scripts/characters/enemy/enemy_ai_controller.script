@@ -1,0 +1,24 @@
+go.property("distToTarget", 20)
+
+require "modules.common"
+
+local TARGET = "/hero/body"
+
+function init(self)
+	local url = msg.url()
+	url.path = TARGET
+end
+
+function update(self, dt)
+	local target_pos = go.get_position(TARGET)
+	local pos = go.get_position()
+	if math.abs(pos.x - target_pos.x) < self.distToTarget then
+		if vmath.length_sqr(pos - target_pos) < self.distToTarget * self.distToTarget then
+			msg.post(".", msgtype_input, { id = input_attack })
+		end
+	elseif pos.x < target_pos.x then
+		msg.post(".", msgtype_input, { id = input_right })
+	elseif pos.x > target_pos.x then
+		msg.post(".", msgtype_input, { id = input_left })
+	end
+end

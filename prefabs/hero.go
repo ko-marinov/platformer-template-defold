@@ -1,6 +1,6 @@
 components {
   id: "controller"
-  component: "/scripts/player/player_controller.script"
+  component: "/scripts/characters/player/player_controller.script"
   position {
     x: 0.0
     y: 0.0
@@ -15,7 +15,7 @@ components {
 }
 components {
   id: "melee_attack"
-  component: "/scripts/player/melee_attack.script"
+  component: "/scripts/characters/player/melee_attack.script"
   position {
     x: 0.0
     y: 0.0
@@ -30,7 +30,7 @@ components {
 }
 components {
   id: "player_animation_controller"
-  component: "/scripts/player/player_animation_controller.script"
+  component: "/scripts/characters/player/player_animation_controller.script"
   position {
     x: 0.0
     y: 0.0
@@ -45,7 +45,7 @@ components {
 }
 components {
   id: "player_input_controller"
-  component: "/scripts/player/player_input_controller.script"
+  component: "/scripts/characters/player/player_input_controller.script"
   position {
     x: 0.0
     y: 0.0
@@ -103,6 +103,7 @@ embedded_components {
   "restitution: 0.5\n"
   "group: \"player\"\n"
   "mask: \"level\"\n"
+  "mask: \"enemy_weapon\"\n"
   "embedded_collision_shape {\n"
   "  shapes {\n"
   "    shape_type: TYPE_BOX\n"

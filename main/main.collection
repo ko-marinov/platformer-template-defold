@@ -3,8 +3,8 @@ instances {
   id: "enemy_factory"
   prototype: "/prefabs/enemy_factory.go"
   position {
-    x: 954.0
-    y: 40.0
+    x: 326.0
+    y: 352.0
     z: 0.0
   }
   rotation {
@@ -25,6 +25,26 @@ collection_instances {
   position {
     x: 253.0
     y: 403.0
+    z: 0.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+collection_instances {
+  id: "enemy"
+  collection: "/prefabs/enemy.collection"
+  position {
+    x: 357.0
+    y: 449.0
     z: 0.0
   }
   rotation {
@@ -68,6 +88,7 @@ embedded_instances {
   "group: \\\"level\\\"\\n"
   "mask: \\\"default\\\"\\n"
   "mask: \\\"player\\\"\\n"
+  "mask: \\\"enemy\\\"\\n"
   "linear_damping: 0.0\\n"
   "angular_damping: 0.0\\n"
   "locked_rotation: false\\n"
@@ -103,7 +124,7 @@ embedded_instances {
   }
 }
 embedded_instances {
-  id: "player_hp"
+  id: "debug_board"
   data: "components {\n"
   "  id: \"debug_big_trash_heap\"\n"
   "  component: \"/gui/debug_big_trash_heap.gui\"\n"

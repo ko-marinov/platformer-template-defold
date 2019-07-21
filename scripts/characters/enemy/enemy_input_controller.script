@@ -1,0 +1,108 @@
+require "modules.common"
+
+-- Input states
+local STAY		= hash("STAY")
+local RUN		= hash("RUN")
+local ATTACK	= hash("ATTACK")
+local FALL		= hash("FALL")
+local HURT		= hash("HURT")
+local JUMP		= hash("JUMP")
+
+-------------------------------------------------------------
+
+local function isActionPermitted(self, action_id)
+	if self.state == STAY or self.state == RUN then
+		return true
+	elseif self.state == ATTACK then
+		return false
+	elseif self.state == FALL then
+		return action_id ~= input_attack and action_id ~= input_jump
+	elseif self.state == JUMP then
+		return action_id ~= input_jump
+	end
+
+	return false
+end
+
+local function processInput(self, action_id, action)
+	if not isActionPermitted(self, action_id) then
+		return
+	end
+
+	if action_id == input_left then
+		self.move_hor = -1
+	elseif action_id == input_right then
+		self.move_hor = 1
+	elseif action_id == input_attack then
+		self.attack_input = true
+	elseif action_id == input_jump then
+		msg.post(".", msgtype_trigger, { id = trigger_jump })
+	end
+end
+
+function init(self)
+	-- Add initialization code here
+	-- Remove this function if not needed
+	self.state = STAY
+	self.move_hor = 0
+	self.move_ver = 0
+	self.grounded = nil
+	self.hurt = nil
+	self.attack = nil
+	self.attack_input = false
+	self.jump_input = false
+	msg.post(".", msgtype_check_tag, { id = tag_grounded })
+	msg.post(".", msgtype_check_tag, { id = tag_hurt })
+	msg.post(".", msgtype_check_tag, { id = tag_attack })
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- send updates
+	msg.post(".", msgtype_param, { id = param_move, value = self.move_hor })
+	msg.post(".", msgtype_param, { id = param_attack_input, value = self.attack_input })
+
+	-- update input state
+	if self.hurt then
+		self.state = HURT
+	elseif self.attack then
+		self.state = ATTACK
+	elseif not self.grounded then
+		if self.move_ver > 0 then
+			self.state = JUMP
+		else
+			self.state = FALL
+		end
+	elseif self.move_hor ~= 0 then
+		self.state = RUN
+	else
+		self.state = STAY
+	end
+	-- print("STATE: " .. self.state)
+
+	-- clear
+	self.move_hor = 0
+	self.attack_input = false
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == msgtype_tag then
+		if message.id == tag_grounded then
+			self.grounded = message.value
+		elseif message.id == tag_hurt then
+			self.hurt = message.value
+		elseif message.id == tag_attack then
+			self.attack = message.value
+		end
+	elseif message_id == msgtype_param then
+		if message.id == param_vvel then
+			self.move_ver = message.value
+		end
+	elseif message_id == msgtype_input then
+		processInput(self, message.id, message.data)
+	end
+end

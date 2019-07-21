@@ -1,4 +1,5 @@
 go.property("damageDeal", 100)
+go.property("attackSpeed", 0.5)
 
 require "modules.common"
 
@@ -17,18 +18,36 @@ local function process(self, go_id)
 	msg.post(url, hash("damage"), { damage = self.damageDeal })
 end
 
+local function allowAttacking(self)
+	self.isAttackAllowed = true
+	self.timer = timer.INVALID_TIMER_HANDLE
+end
+
+local function tryAttack(self)
+	if self.isAttackAllowed ~= true then return end
+	
+	self.collided_objects = {}
+	msg.post("attackTriggerArea#collisionobject", "enable")
+	assert(self.timer == timer.INVALID_TIMER_HANDLE)
+	self.isAttackAllowed = false
+	self.timer = timer.delay(self.attack_period, false, allowAttacking)
+	msg.post(".", msgtype_trigger, { id = trigger_attack } )
+end
+
 function init(self)
 	self.collided_objects = {}
+	self.attack_period = 1 / self.attackSpeed
+	self.timer = timer.INVALID_TIMER_HANDLE
+	self.isAttackAllowed = true
 	msg.post("attackTriggerArea#collisionobject", "disable")
 
 	updateAttackPoint(self, 1)
 end
 
 function on_message(self, message_id, message, sender)
-	if message_id == msgtype_tag and message.id == tag_attack then
+	if message_id == msgtype_param and message.id == param_attack_input then
 		if message.value then
-			self.collided_objects = {}
-			msg.post("attackTriggerArea#collisionobject", "enable")
+			tryAttack(self)
 		else
 			msg.post("attackTriggerArea#collisionobject", "disable")
 		end

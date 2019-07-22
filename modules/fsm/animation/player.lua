@@ -18,19 +18,38 @@ end
 function M.new()
 	-------------------------------------------------------------------------------------------------
 	----------------------------- Player animation finite state machine -----------------------------
+	-------------------------------------------------------------------------------------------------
+	-- ** Name convention **
+	--
+	-- I. Events
+	--
+	-- 1. Active verb
+	-- 2, Lowercase
+	-- 3. In one word
+	-- Examples: attack, fall, die, takedamage
+	--
+	-- II. States
+	--
+	-- 1. Clear nouns without '-ing' and '-ed'
+	-- 2. Uppercase
+	-- 3. Words splitted up by underscores
+	-- Examples: OFFENSIVE (instead of ATTACKING ('-ing' is forbidden) or ATTACK (unclear, 'to attack'))
+	--           IN_AIR or AIRBORNE (instead of FALLING or FALL)
+	--           IDLE (its known word for inactivity state, so there is no ambiguity)
+	-------------------------------------------------------------------------------------------------
+	
 	local fsm = moduleFsm.create({
-		initial = "idle",
-		events = { -- TODO: event/state naming convention
-			{ name = "startrun", 		from = "idle", 								to = "running"		},
-			{ name = "stoprun",  		from = "running", 							to = "idle" 		},
-			{ name = "attack", 			from = { "idle", "running", "attacking" },	to = "attacking"	},
-			{ name = "attackfinished",	from = { "attacking" },						to = "idle" 		},
-			{ name = "fall", 			from = { "idle", "running", "attacking" }, 	to = "falling"		},
-			{ name = "damaged", 		from = "*", 								to = "hurt"			},
-			{ name = "death", 			from = "*", 								to = "dead" 		},
-			{ name = "stopfall", 		from = "falling", 							to = "idle" 		},
-			{ name = "toidle",	 		from = "*", 								to = "idle" 		},
-			{ name = "jump",			from = { "idle", "running" },				to = "jumpup"		}
+		initial = "IDLE",
+		events = {
+			{ name = "run", 			from = "IDLE", 									to = "IN_MOTION"	},
+			{ name = "stop",  			from = "IN_MOTION", 							to = "IDLE" 		},
+			{ name = "attack", 			from = { "IDLE", "IN_MOTION", "OFFENSIVE" },	to = "OFFENSIVE"	},
+			{ name = "finishattack",	from = { "OFFENSIVE" },							to = "IDLE" 		},
+			{ name = "fall", 			from = { "IDLE", "IN_MOTION", "OFFENSIVE" }, 	to = "AIRBORNE"		},
+			{ name = "takedamage", 		from = "*", 									to = "INJURY"		},
+			{ name = "die", 			from = "*", 									to = "DEATH" 		},
+			{ name = "land", 			from = "AIRBORNE", 								to = "IDLE" 		},
+			{ name = "toidle",	 		from = "*", 									to = "IDLE" 		}
 		},
 	})
 	
@@ -41,47 +60,49 @@ function M.new()
 	fsm.blackboard[tag_grounded]	= false
 	fsm.blackboard[tag_attack]		= false
 	fsm.blackboard[tag_hurt]		= false
+	fsm.blackboard[tag_dead]		= false
 	
 	
 	-- TODO: temporary implementation, attack MUST be refactored
 	-- on enter state attack1
+	-- Attack should be processed in its own sub-fsm
 	fsm.attack_num 				= 1
 	fsm.attack_request 			= false
 	fsm.attack_anim_in_progress = false
 	
-	-- on enter state idle
-	fsm.onidle = function(event, from, to)
+	-- on enter state IDLE
+	fsm.onIDLE = function(event, from, to)
 		playAnim(fsm, hash("idle"))
 	end
 	
-	fsm.onupdateidle = function(dt)
-		local b = fsm.blackboard
-		if b[tag_hurt] then
-			fsm:damaged()
-		elseif not b[tag_grounded] then
-			fsm:fall()
-		elseif b[param_move] ~= 0 then
-			fsm:startrun()
-		end
-	end
+	--fsm.onupdateIDLE = function(dt)
+	--	local b = fsm.blackboard
+	--	if b[tag_hurt] then
+	--		fsm:takedamage()
+	--	elseif not b[tag_grounded] then
+	--		fsm:fall()
+	--	elseif b[param_move] ~= 0 then
+	--		fsm:run()
+	--	end
+	--end
 	
-	-- on enter state running
-	fsm.onrunning = function(event, from, to)
+	-- on enter state IN_MOTION
+	fsm.onIN_MOTION = function(event, from, to)
 		playAnim(fsm, hash("run"))
 	end
 	
-	fsm.onupdaterunning = function(dt)
-		local b = fsm.blackboard
-		if b[tag_hurt] then
-			fsm:damaged()
-		elseif not b[tag_grounded] then
-			fsm:fall()
-		elseif b[param_move] == 0 then
-			fsm:stoprun()
-		end
-	end
+	--fsm.onupdateIN_MOTION = function(dt)
+	--	local b = fsm.blackboard
+	--	if b[tag_hurt] then
+	--		fsm:takedamage()
+	--	elseif not b[tag_grounded] then
+	--		fsm:fall()
+	--	elseif b[param_move] == 0 then
+	--		fsm:stop()
+	--	end
+	--end
 	
-	fsm.onattacking = function(event, from, to)
+	fsm.onOFFENSIVE = function(event, from, to)
 		local attackAnim = hash("attack" .. fsm.attack_num)
 		playAnim(fsm, attackAnim)
 		msg.post(".", msgtype_tag, { id = tag_attack, value = true })
@@ -99,46 +120,54 @@ function M.new()
 		return true
 	end
 	
-	fsm.onmessageattacking = function(message_id, message, sender)
+	fsm.onmessageOFFENSIVE = function(message_id, message, sender)
 		if message_id == hash("animation_done") then
 			reset_attack_tag(fsm)
 			if fsm.attack_request == true then
 				fsm:attack()
 			else
-				fsm:attackfinished()
+				fsm:finishattack()
 			end
 		end
 	end
 	
-	-- on enter state falling
-	fsm.onfalling = function(event, from, to)
+	-- on enter state AIRBORNE
+	fsm.onAIRBORNE = function(event, from, to)
 		playAnim(fsm, hash("fall"))
 	end
 	
-	fsm.onupdatefalling = function(dt)
-		local b = fsm.blackboard
-		if b[tag_hurt] then
-			fsm:damaged()
-		elseif b[tag_grounded] then
-			fsm:stopfall()
-		end
-	end
-	
-	-- on enter state hurt
-	fsm.onhurt = function(event, from, to)
+	--fsm.onupdateAIRBORNE = function(dt)
+	--	local b = fsm.blackboard
+	--	if b[tag_hurt] then
+	--		fsm:takedamage()
+	--	elseif b[tag_grounded] then
+	--		fsm:land()
+	--	end
+	--end
+
+	-- on enter state INJURY
+	fsm.onINJURY = function(event, from, to)
 		playAnim(fsm, hash("hurt"))
 		msg.post(".", msgtype_tag, { id = tag_hurt, value = true })
 	end
 	
-	fsm.onmessagehurt = function(message_id, message, sender)
+	fsm.onbeforetakedamage = function(event, from, to)
+		if fsm.current == "INJURY" or fsm.current == "DEATH" then
+			return false
+		end
+
+		return true
+	end
+	
+	fsm.onmessageINJURY = function(message_id, message, sender)
 		if message_id == hash("animation_done") then
 			msg.post(".", msgtype_tag, { id = tag_hurt, value = false })
 			fsm:toidle()
 		end
 	end
 	
-	-- on enter state dead
-	fsm.ondead = function(event, from, to)
+	-- on enter state DEATH
+	fsm.onDEATH = function(event, from, to)
 		playAnim(fsm, hash("die"))
 	end
 	
@@ -151,14 +180,49 @@ function M.new()
 	-- fsm extension 							--
 	-- can be added into module					--
 	----------------------------------------------
-	fsm.update = function(dt)
-		local updatehandlername = "onupdate" .. fsm.current
-		if fsm[updatehandlername] ~= nil then
-			fsm[updatehandlername](fsm, dt)
+	fsm.tryDie = function()
+		if fsm.blackboard[tag_dead] then fsm:die() end
+	end
+
+	fsm.tryTakeDamage = function()
+		if fsm.blackboard[tag_hurt] then fsm:takedamage() end
+	end
+
+	fsm.updateAirborne = function()
+		if fsm.blackboard[tag_grounded] then 
+			fsm:land()
+		else
+			fsm:fall()
 		end
+	end
+
+	fsm.updateMovement = function()
+		if fsm.blackboard[param_move] == 0 then
+			fsm:stop()
+		else
+			fsm:run()
+		end
+	end
+
+	fsm.updateDirection = function()
 		if fsm.blackboard[param_move] ~= 0 then
 			sprite.set_hflip("#sprite", fsm.blackboard[param_move] < 0)
 		end
+	end
+	
+	fsm.update = function(dt)
+		-- local updatehandlername = "onupdate" .. fsm.current
+		-- if fsm[updatehandlername] ~= nil then
+		-- 	fsm[updatehandlername](fsm, dt)
+		-- end
+		-- if fsm.blackboard[param_move] ~= 0 then
+		-- 	sprite.set_hflip("#sprite", fsm.blackboard[param_move] < 0)
+		-- end
+		fsm.tryDie()
+		fsm.tryTakeDamage()
+		fsm.updateAirborne()
+		fsm.updateMovement()
+		fsm.updateDirection()
 	end
 	
 	fsm.on_message = function(message_id, message, sender)
@@ -172,7 +236,7 @@ function M.new()
 				if message.id == trigger_attack then
 					fsm:attack()
 				elseif message.id == trigger_damage then
-					fsm:damaged()
+					fsm:takedamage()
 				end
 			end
 			local messagehandler = "onmessage" .. fsm.current

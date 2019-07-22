@@ -16,6 +16,11 @@ function update(self, dt)
 end
 
 function on_message(self, message_id, message, sender)
+	if message_id == hash("collision_response") then
+		if message.other_group == hash("enemy") then
+			msg.post("#property_health", hash("damage"), { damage = 1 })
+		end
+	end
 	self.mv.on_message(message_id, message, sender)
 end
 

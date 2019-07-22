@@ -1,4 +1,4 @@
-script: "/scripts/gui/debug_big_trash_heap.gui_script"
+script: "/scripts/properties/gui/debug_big_trash_heap.gui_script"
 fonts {
   name: "system_font"
   font: "/builtins/fonts/system_font.font"

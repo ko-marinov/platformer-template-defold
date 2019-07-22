@@ -21,6 +21,7 @@ trigger_jump		= hash("trigger_jump")
 -- /Activate/deactivate/
 tag_grounded 		= hash("tag_grounded")
 tag_hurt 			= hash("tag_hurt")
+tag_dead			= hash("tag_dead")
 tag_attack 			= hash("tag_attack")
 
 -- Input

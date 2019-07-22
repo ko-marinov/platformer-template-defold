@@ -41,6 +41,7 @@ function M.new()
 	fsm.blackboard[tag_grounded]	= false
 	fsm.blackboard[tag_attack]		= false
 	fsm.blackboard[tag_hurt]		= false
+	fsm.blackboard[tag_dead]		= false
 	
 	
 	-- TODO: temporary implementation, attack MUST be refactored
@@ -56,7 +57,9 @@ function M.new()
 	
 	fsm.onupdateidle = function(dt)
 		local b = fsm.blackboard
-		if b[tag_hurt] then
+		if b[tag_dead] then
+			fsm:death()
+		elseif b[tag_hurt] then
 			fsm:damaged()
 		elseif not b[tag_grounded] then
 			fsm:fall()
@@ -72,7 +75,9 @@ function M.new()
 	
 	fsm.onupdaterunning = function(dt)
 		local b = fsm.blackboard
-		if b[tag_hurt] then
+		if b[tag_dead] then
+			fsm:death()
+		elseif b[tag_hurt] then
 			fsm:damaged()
 		elseif not b[tag_grounded] then
 			fsm:fall()
@@ -117,7 +122,9 @@ function M.new()
 	
 	fsm.onupdatefalling = function(dt)
 		local b = fsm.blackboard
-		if b[tag_hurt] then
+		if b[tag_dead] then
+			fsm:death()
+		elseif b[tag_hurt] then
 			fsm:damaged()
 		elseif b[tag_grounded] then
 			fsm:stopfall()

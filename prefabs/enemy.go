@@ -119,6 +119,7 @@ embedded_components {
   "group: \"enemy\"\n"
   "mask: \"level\"\n"
   "mask: \"player_weapon\"\n"
+  "mask: \"player\"\n"
   "embedded_collision_shape {\n"
   "  shapes {\n"
   "    shape_type: TYPE_BOX\n"

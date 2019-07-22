@@ -7,6 +7,7 @@ local ATTACK	= hash("ATTACK")
 local FALL		= hash("FALL")
 local HURT		= hash("HURT")
 local JUMP		= hash("JUMP")
+local DEAD		= hash("DEAD")
 
 -------------------------------------------------------------
 
@@ -48,11 +49,13 @@ function init(self)
 	self.move_ver = 0
 	self.grounded = nil
 	self.hurt = nil
+	self.dead = nil
 	self.attack = nil
 	self.attack_input = false
 	self.jump_input = false
 	msg.post(".", msgtype_check_tag, { id = tag_grounded })
 	msg.post(".", msgtype_check_tag, { id = tag_hurt })
+	msg.post(".", msgtype_check_tag, { id = tag_dead })
 	msg.post(".", msgtype_check_tag, { id = tag_attack })
 end
 
@@ -67,7 +70,9 @@ function update(self, dt)
 	msg.post(".", msgtype_param, { id = param_attack_input, value = self.attack_input })
 
 	-- update input state
-	if self.hurt then
+	if self.dead then
+		self.state = DEAD
+	elseif self.hurt then
 		self.state = HURT
 	elseif self.attack then
 		self.state = ATTACK
@@ -97,6 +102,8 @@ function on_message(self, message_id, message, sender)
 			self.hurt = message.value
 		elseif message.id == tag_attack then
 			self.attack = message.value
+		elseif message.id == tag_dead then
+			self.dead = message.value
 		end
 	elseif message_id == msgtype_param then
 		if message.id == param_vvel then

@@ -19,12 +19,12 @@ instances {
     z: 1.0
   }
 }
-collection_instances {
-  id: "hero"
-  collection: "/prefabs/hero.collection"
+instances {
+  id: "game_camera"
+  prototype: "/prefabs/game_camera.go"
   position {
-    x: 253.0
-    y: 403.0
+    x: 0.0
+    y: 0.0
     z: 0.0
   }
   rotation {
@@ -40,11 +40,11 @@ collection_instances {
   }
 }
 collection_instances {
-  id: "enemy"
-  collection: "/prefabs/enemy.collection"
+  id: "hero"
+  collection: "/prefabs/hero.collection"
   position {
-    x: 357.0
-    y: 449.0
+    x: 253.0
+    y: 403.0
     z: 0.0
   }
   rotation {

@@ -3,7 +3,9 @@ go.property("gravity", -700)
 local moduleMovement = require "modules.ground_movement"
 
 function init(self)
-	self.mv = moduleMovement.new(self.gravity)
+	local offset = vmath.vector3(0, -3, 0)
+	local size = vmath.vector3(20, 30, 0)
+	self.mv = moduleMovement.new(self.gravity, offset, size)
 	msg.post(".", "acquire_input_focus")
 end
 

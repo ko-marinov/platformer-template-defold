@@ -14,6 +14,7 @@ function printVec(v, name)
 	---print(str .. "(" .. v.x .. ", " .. v.y .. ", " .. v.z .. ")")
 end
 
+-- TODO: calc velocity via dx/dt + use acceleration
 local function update_velocity(mv, dt)
 	local v = mv.velocity
 
@@ -37,10 +38,32 @@ local function update_velocity(mv, dt)
 	mv.velocity = v
 end
 
-local function handle_obstacle_contact(mv, normal, distance)
+local function handle_obstacle_contact(mv, position, normal, distance)
+	local pos = go.get_position() + mv.offset
+
+	-- find sprite's bottom Y-coordinate
+	local offsetX = mv.size.x / 2 - 1
+	local offsetY = mv.size.y / 2 - 0.5
+	local worldThresholdY      = pos.y - offsetY
+	local worldThresholdRightX = pos.x + offsetX
+	local worldThresholdLeftX  = pos.x - offsetX
 	if distance > 0 then
 		-- First, project the accumulated correction onto
 		-- the penetration vector
+		local vVec = vmath.vector3(0, 1, 0)
+		local ddd = vmath.project(vVec, normal)
+		if ddd < 0.5 and position.y < worldThresholdY then 
+			return 
+		end
+
+		if ddd > 0.7 and position.x < worldThresholdLeftX then 
+			return 
+		end
+
+		if ddd > 0.7 and position.x > worldThresholdRightX then 
+			return
+		end
+		
 		local proj = vmath.project(mv.correction, normal * distance)
 		if proj < 1 then
 			-- Only care for projections that does not overshoot.
@@ -53,7 +76,7 @@ local function handle_obstacle_contact(mv, normal, distance)
 	end
 end
 
-function M.new(g)
+function M.new(g, collisionBoxOffset, collisionBoxSize)
 	local mv = {
 		-- place members here
 		frame_num = 0,
@@ -61,7 +84,9 @@ function M.new(g)
 		correction = vmath.vector3(),
 		velocity = vmath.vector3(0, 0, 0),
 		ground_contact = false,
-		gravity = g
+		gravity = g,
+		offset = collisionBoxOffset,
+		size = collisionBoxSize
 	}
 
 	mv.update = function(dt)
@@ -76,7 +101,7 @@ function M.new(g)
 	mv.on_message = function(message_id, message, sender)
 		if message_id == hash("contact_point_response") then
 			if message.group == hash("level") then
-				handle_obstacle_contact(mv, message.normal, message.distance)
+				handle_obstacle_contact(mv, message.position, message.normal, message.distance)
 			end
 		elseif message_id == msgtype_param then
 			if message.id == param_move then

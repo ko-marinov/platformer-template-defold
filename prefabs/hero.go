@@ -27,6 +27,11 @@ components {
     z: 0.0
     w: 1.0
   }
+  properties {
+    id: "attackSpeed"
+    value: "2.0"
+    type: PROPERTY_TYPE_NUMBER
+  }
 }
 components {
   id: "player_animation_controller"

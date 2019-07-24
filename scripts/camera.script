@@ -1,0 +1,46 @@
+local levelSizeX = 1200
+local levelSizeY = 900
+
+function init(self)
+	msg.post("#camera", "acquire_camera_focus")
+	msg.post("@render:", "use_fixed_projection", { zoom = 3, near = -1, far = 1 })
+end
+
+function final(self)
+	msg.post("#camera", "release_camera_focus")
+end
+
+function update(self, dt)
+	local square_side = 30
+	local w = 900--render.get_width()
+	local h = 600--render.get_height()
+	local pos = go.get_position()
+	local targetPos = go.get_position("/hero/body")
+
+	if targetPos.x < pos.x + w/2 - square_side then
+		-- try move left
+		pos.x = targetPos.x - w/2 + square_side
+		--if pos.x < 0 then pos.x = 0 end
+	elseif targetPos.x > pos.x + w/2 + square_side then
+		-- try move right
+		pos.x = targetPos.x - w/2 - square_side
+		--if pos.x + w > levelSizeX then pos.x = levelSizeX - w end
+	end
+
+	if targetPos.y < pos.y + h/2 - square_side then
+		-- try move bottom
+		pos.y = targetPos.y - h/2 + square_side
+		--if pos.y < 0 then pos.y = 0 end
+	elseif targetPos.y > pos.y + h/2 + square_side then
+		-- try move top
+		pos.y = targetPos.y - h/2 - square_side
+		--if pos.y + h > levelSizeY then pos.y = levelSizeY - h end
+	end
+
+	go.set_position(pos)
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Remove this function if not needed
+end

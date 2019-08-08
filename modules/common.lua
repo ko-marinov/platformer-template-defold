@@ -4,6 +4,7 @@ msgtype_trigger		= hash("msgtype_trigger")
 msgtype_tag			= hash("msgtype_tag")
 msgtype_check_tag	= hash("msgtype_check_tag")
 msgtype_input		= hash("msgtype_input")
+msgtype_anim_event	= hash("msgtype_anim_event")
 
 -- Params
 -- /Updates each frame/
@@ -29,3 +30,8 @@ input_left			= hash("left")
 input_right			= hash("right")
 input_attack		= hash("attack")
 input_jump			= hash("jump")
+
+-- Anim events
+anim_started		= hash("anim_started")
+anim_finished		= hash("anim_finished")
+anim_interrupted	= hash("anim_interrupted")

@@ -1,7 +1,6 @@
-local M = {}
-
 require "modules.common"
 local moduleFsm = require "modules.fsm"
+local moduleMeleeFsm = require "modules.fsm.attack.melee"
 
 local function reset_attack_tag(fsm)
 	fsm.attack_anim_in_progress = false
@@ -14,6 +13,8 @@ local function playAnim(fsm, anim_id)
 	reset_attack_tag(fsm)
 	msg.post("#sprite", "play_animation", { id = anim_id })
 end
+
+local M = {}
 
 function M.new()
 	-------------------------------------------------------------------------------------------------
@@ -36,6 +37,8 @@ function M.new()
 	-- Examples: OFFENSIVE (instead of ATTACKING ('-ing' is forbidden) or ATTACK (unclear, 'to attack'))
 	--           IN_AIR or AIRBORNE (instead of FALLING or FALL)
 	--           IDLE (its known word for inactivity state, so there is no ambiguity)
+	--
+	-- TODO: Each transition in separate line
 	-------------------------------------------------------------------------------------------------
 
 	local fsm = moduleFsm.create({
@@ -50,7 +53,7 @@ function M.new()
 			{ name = "die", 			from = "*", 									to = "DEATH" 		},
 			{ name = "land", 			from = "AIRBORNE", 								to = "IDLE" 		},
 			{ name = "toidle",	 		from = "*", 									to = "IDLE" 		}
-		},
+		}
 	})
 
 	-- fsm extension --
@@ -62,88 +65,30 @@ function M.new()
 	fsm.blackboard[tag_hurt]		= false
 	fsm.blackboard[tag_dead]		= false
 
-
-	-- TODO: temporary implementation, attack MUST be refactored
-	-- on enter state attack1
-	-- Attack should be processed in its own sub-fsm
-	fsm.attack_num 				= 1
-	fsm.attack_request 			= false
-	fsm.attack_anim_in_progress = false
-
+	fsm.meleeFsm					= moduleMeleeFsm.new()
+	
 	-- on enter state IDLE
 	fsm.onIDLE = function(event, from, to)
 		playAnim(fsm, hash("idle"))
 	end
-
-	--fsm.onupdateIDLE = function(dt)
-	--	local b = fsm.blackboard
-	--	if b[tag_hurt] then
-	--		fsm:takedamage()
-	--	elseif not b[tag_grounded] then
-	--		fsm:fall()
-	--	elseif b[param_move] ~= 0 then
-	--		fsm:run()
-	--	end
-	--end
 
 	-- on enter state IN_MOTION
 	fsm.onIN_MOTION = function(event, from, to)
 		playAnim(fsm, hash("run"))
 	end
 
-	--fsm.onupdateIN_MOTION = function(dt)
-	--	local b = fsm.blackboard
-	--	if b[tag_hurt] then
-	--		fsm:takedamage()
-	--	elseif not b[tag_grounded] then
-	--		fsm:fall()
-	--	elseif b[param_move] == 0 then
-	--		fsm:stop()
-	--	end
-	--end
-
-	fsm.onOFFENSIVE = function(event, from, to)
-		local attackAnim = hash("attack" .. fsm.attack_num)
-		playAnim(fsm, attackAnim)
-		msg.post(".", msgtype_tag, { id = tag_attack, value = true })
-		fsm.attack_request = false
-		fsm.attack_anim_in_progress = true
-		fsm.attack_num = math.fmod(fsm.attack_num, 3) + 1
-	end
-
 	fsm.onbeforeattack = function(event, from, to)
-		if fsm.attack_anim_in_progress then
-			fsm.attack_request = true
-			return false
-		end
-
-		return true
+		fsm.meleeFsm.attack()
 	end
 
 	fsm.onmessageOFFENSIVE = function(message_id, message, sender)
-		if message_id == hash("animation_done") then
-			reset_attack_tag(fsm)
-			if fsm.attack_request == true then
-				fsm:attack()
-			else
-				fsm:finishattack()
-			end
-		end
+		fsm.meleeFsm.on_message(message_id, message, sender)
 	end
 
 	-- on enter state AIRBORNE
 	fsm.onAIRBORNE = function(event, from, to)
 		playAnim(fsm, hash("fall"))
 	end
-
-	--fsm.onupdateAIRBORNE = function(dt)
-	--	local b = fsm.blackboard
-	--	if b[tag_hurt] then
-	--		fsm:takedamage()
-	--	elseif b[tag_grounded] then
-	--		fsm:land()
-	--	end
-	--end
 
 	-- on enter state INJURY
 	fsm.onINJURY = function(event, from, to)
@@ -180,12 +125,22 @@ function M.new()
 	-- fsm extension 							--
 	-- can be added into module					--
 	----------------------------------------------
+	fsm.abortMelee = function()
+		fsm.meleeFsm.abort()
+	end
+	
 	fsm.tryDie = function()
-		if fsm.blackboard[tag_dead] then fsm:die() end
+		if fsm.blackboard[tag_dead] then
+			fsm.abortMelee()
+			fsm:die()
+		end
 	end
 
 	fsm.tryTakeDamage = function()
-		if fsm.blackboard[tag_hurt] then fsm:takedamage() end
+		if fsm.blackboard[tag_hurt] then
+			fsm.abortMelee()
+			fsm:takedamage()
+		end
 	end
 
 	fsm.updateAirborne = function()
@@ -204,6 +159,14 @@ function M.new()
 		end
 	end
 
+	fsm.updateOffensive = function()
+		if fsm.current ~= "OFFENSIVE" and fsm.meleeFsm.isAttacking() then
+			fsm:attack()
+		elseif fsm.current == "OFFENSIVE" and not fsm.meleeFsm.isAttacking() then
+			fsm:finishattack()
+		end
+	end
+
 	fsm.updateDirection = function()
 		if fsm.blackboard[param_move] ~= 0 then
 			sprite.set_hflip("#sprite", fsm.blackboard[param_move] < 0)
@@ -211,16 +174,10 @@ function M.new()
 	end
 
 	fsm.update = function(dt)
-		-- local updatehandlername = "onupdate" .. fsm.current
-		-- if fsm[updatehandlername] ~= nil then
-		-- 	fsm[updatehandlername](fsm, dt)
-		-- end
-		-- if fsm.blackboard[param_move] ~= 0 then
-		-- 	sprite.set_hflip("#sprite", fsm.blackboard[param_move] < 0)
-		-- end
 		fsm.tryDie()
 		fsm.tryTakeDamage()
 		fsm.updateAirborne()
+		fsm.updateOffensive()
 		fsm.updateMovement()
 		fsm.updateDirection()
 	end

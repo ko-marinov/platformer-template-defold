@@ -1,0 +1,48 @@
+require "modules.common"
+
+local function isAnimExists(anim)
+	-- Try to check anim existance
+	return true
+end
+
+-- TODO: looks like should be placed in a separate module (observer pattern)
+local function notify(observers, message_id, message)
+	for i, obs in ipairs(observers) do
+		msg.post(obs, message_id, message)
+	end
+end
+
+
+local function request(this, anim, bForceRestart)
+	assert(isAnimExists(anim), "Anim [" .. anim .. "] doesn't exists!")
+	if anim == this.currentAnim or not bForceRestart then
+		return
+	end
+
+	if this.currentAnim then -- if playing anim now, it will be interrupted
+		notify(this.observers, msgtype_anim_event, { id = anim_interrupted, anim = this.currentAnim })
+	end
+	notify(this.observers, msgtype_anim_event, { id = anim_started, anim = anim })
+
+	-- WARNING: can't check that hAnim is exists! Register anim list manually?
+	msg.post("#sprite", "play_animation", { id = hash(anim) })
+	this.currentAnim = anim
+end
+
+function init(self)
+	this.observers = {}
+	this.currentAnim = nil
+end
+
+function update(self, dt)
+	
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("animation_done") then
+		notify(this.observers, msgtype_anim_event, { id = anim_finished, anim = this.currentAnim })
+		this.currentAnim = nil
+	else -- register/unregister/request anim
+
+	end
+end

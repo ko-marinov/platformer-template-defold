@@ -2,21 +2,13 @@ require "modules.common"
 local moduleFsm = require "modules.fsm"
 local moduleMeleeFsm = require "modules.fsm.attack.melee"
 
-local function reset_attack_tag(fsm)
-	fsm.attack_anim_in_progress = false
-	msg.post(".", msgtype_tag, { id = tag_attack, value = false })
-end
-
-local function playAnim(fsm, anim_id)
-	-- when interrupt animation "animation_done" is not come
-	-- so reset all flags manually
-	reset_attack_tag(fsm)
-	msg.post("#sprite", "play_animation", { id = anim_id })
+local function playAnim(fsm, animId)
+	msg.post(fsm.anim_controller, "anim_request", { animId = animId })
 end
 
 local M = {}
 
-function M.new()
+function M.new(anim_controller, dbgName)
 	-------------------------------------------------------------------------------------------------
 	----------------------------- Player animation finite state machine -----------------------------
 	-------------------------------------------------------------------------------------------------
@@ -53,7 +45,8 @@ function M.new()
 			{ name = "die", 			from = "*", 									to = "DEATH" 		},
 			{ name = "land", 			from = "AIRBORNE", 								to = "IDLE" 		},
 			{ name = "toidle",	 		from = "*", 									to = "IDLE" 		}
-		}
+		},
+		dbgName = dbgName or "FSM:Anim"
 	})
 
 	-- fsm extension --
@@ -65,7 +58,8 @@ function M.new()
 	fsm.blackboard[tag_hurt]		= false
 	fsm.blackboard[tag_dead]		= false
 
-	fsm.meleeFsm					= moduleMeleeFsm.new()
+	fsm.meleeFsm					= moduleMeleeFsm.new(anim_controller)
+	fsm.anim_controller				= anim_controller
 	
 	-- on enter state IDLE
 	fsm.onIDLE = function(event, from, to)
@@ -114,11 +108,6 @@ function M.new()
 	-- on enter state DEATH
 	fsm.onDEATH = function(event, from, to)
 		playAnim(fsm, hash("die"))
-	end
-
-	-- For debug purpose --
-	fsm.onstatechange = function(fsm, event, from, to) 
-		print("[PlayerAnimFsm] event: " .. event .. ", transition: " .. from .. " --> " .. to) 
 	end
 
 	----------------------------------------------

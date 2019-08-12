@@ -2,7 +2,7 @@ local moduleFsm = require "modules.fsm"
 
 local M = {}
 
-function M.new()
+function M.new(anim_controller, dbgName)
 	local fsm = moduleFsm.create({
 		initial = "IDLE",
 		events = {
@@ -11,8 +11,11 @@ function M.new()
 			{ name = "doattack",	from = "BEFORE_ATTACK",	to = "AFTER_ATTACK"		},
 			{ name = "finish",		from = "AFTER_ATTACK",	to = "IDLE"				},
 			{ name = "abort",		from = "BEFORE_ATTACK",	to = "IDLE"				}
-		}
+		},
+		dbgName = dbgName or "FSM:Attack"
 	})
+
+	fsm.anim_controller = anim_controller
 
 	-- INTERFACE --
 	

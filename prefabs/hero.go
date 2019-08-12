@@ -47,6 +47,11 @@ components {
     z: 0.0
     w: 1.0
   }
+  properties {
+    id: "animController"
+    value: "#animation_controller"
+    type: PROPERTY_TYPE_URL
+  }
 }
 components {
   id: "player_input_controller"
@@ -66,6 +71,21 @@ components {
 components {
   id: "property_health"
   component: "/scripts/properties/property_health.script"
+  position {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+}
+components {
+  id: "animation_controller"
+  component: "/scripts/animation_controller.script"
   position {
     x: 0.0
     y: 0.0

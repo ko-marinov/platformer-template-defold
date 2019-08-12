@@ -1,7 +1,17 @@
+go.property("animController", msg.url())
+
+-- TODO: Eliminate enemy_animation_controller
+--       Try to customize by property only
+
 local moduleAnimFsm = require "modules.fsm.animation.player"
 
 function init(self)
-	self.fsm = moduleAnimFsm.new()
+	self.fsm = moduleAnimFsm.new(self.animController)
+	msg.post(self.animController, "subscribe_anim")
+end
+
+function final(self)
+	msg.post(self.animController, "unsubscribe_anim")
 end
 
 function update(self, dt)

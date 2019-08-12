@@ -29,7 +29,7 @@ components {
   }
 }
 components {
-  id: "animation_controller"
+  id: "enemy_animation_controller"
   component: "/scripts/characters/enemy/enemy_animation_controller.script"
   position {
     x: 0.0
@@ -41,6 +41,11 @@ components {
     y: 0.0
     z: 0.0
     w: 1.0
+  }
+  properties {
+    id: "animController"
+    value: "#animation_controller"
+    type: PROPERTY_TYPE_URL
   }
 }
 components {
@@ -76,6 +81,21 @@ components {
 components {
   id: "ai_controller"
   component: "/scripts/characters/enemy/enemy_ai_controller.script"
+  position {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+}
+components {
+  id: "animation_controller"
+  component: "/scripts/animation_controller.script"
   position {
     x: 0.0
     y: 0.0

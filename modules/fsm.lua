@@ -89,6 +89,7 @@ function machine.create(options)
 	fsm.current = options.initial or 'none'
 	fsm.asyncState = NONE
 	fsm.events = {}
+	fsm.dbgName = options.dbgName or "FSM:Unnamed"
 
 	for _, event in ipairs(options.events or {}) do
 		local name = event.name
@@ -99,6 +100,11 @@ function machine.create(options)
 
 	for name, callback in pairs(options.callbacks or {}) do
 		fsm[name] = callback
+	end
+
+	-- For debug purpose --
+	fsm.onstatechange = function(fsm, event, from, to) 
+		print("[" .. fsm.dbgName .. "] event: " .. event .. ", transition: " .. from .. " --> " .. to) 
 	end
 
 	return fsm

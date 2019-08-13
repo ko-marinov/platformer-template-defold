@@ -1,4 +1,4 @@
-require "modules.common"
+--[[require "modules.common"
 local attackFsm = require "modules.fsm.attack.attack"
 
 local function reset_attack_tag(fsm)
@@ -47,11 +47,11 @@ function M.new(anim_controller)
 	fsm.onmessageBEFORE_ATTACK = function(message_id, message, sender)
 		if message_id == msgtype_anim_event and message.id == anim_finished then
 			-- TODO: check what animation finished
-			fsm:doattack()
+			fsm:attack()
 		end
 	end
 	
 	return fsm
 end
 
-return M
+return M--]]

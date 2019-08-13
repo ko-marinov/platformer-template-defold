@@ -1,6 +1,6 @@
 require "modules.common"
 local moduleFsm = require "modules.fsm"
-local moduleMeleeFsm = require "modules.fsm.attack.melee"
+local moduleAttackFsm = require "modules.fsm.attack.attack"
 
 local function playAnim(fsm, animId)
 	msg.post(fsm.anim_controller, "anim_request", { animId = animId })
@@ -58,7 +58,23 @@ function M.new(anim_controller, dbgName)
 	fsm.blackboard[tag_hurt]		= false
 	fsm.blackboard[tag_dead]		= false
 
-	fsm.meleeFsm					= moduleMeleeFsm.new(anim_controller)
+	---[[
+	local weaponStats = {
+		prepTime	= 0.5,									-- time before hit
+		relaxTime	= 0.5,									-- time after hit and before next hit
+		animSet 	= "sword",								-- set of owner's animations
+		animNum 	= 3,									-- number of animations in animation set
+		hitLogic	= function(relaxTransitionClbk, fsm)	-- actions to do on hit
+			local timerClbck = function(self, handle, time_elapsed)
+				fsm[relaxTransitionClbk](fsm)
+			end
+
+			timer.delay(0.08, false, timerClbck)
+		end
+	}
+	--]]
+
+	fsm.attackFsm					= moduleAttackFsm.new(anim_controller, weaponStats)
 	fsm.anim_controller				= anim_controller
 	
 	-- on enter state IDLE
@@ -72,11 +88,11 @@ function M.new(anim_controller, dbgName)
 	end
 
 	fsm.onbeforeattack = function(event, from, to)
-		fsm.meleeFsm.attack()
+		fsm.attackFsm.requestAttack()
 	end
 
 	fsm.onmessageOFFENSIVE = function(message_id, message, sender)
-		fsm.meleeFsm.on_message(message_id, message, sender)
+		fsm.attackFsm.on_message(message_id, message, sender)
 	end
 
 	-- on enter state AIRBORNE
@@ -115,7 +131,7 @@ function M.new(anim_controller, dbgName)
 	-- can be added into module					--
 	----------------------------------------------
 	fsm.abortMelee = function()
-		fsm.meleeFsm.abort()
+		fsm.attackFsm.abort()
 	end
 	
 	fsm.tryDie = function()
@@ -149,9 +165,9 @@ function M.new(anim_controller, dbgName)
 	end
 
 	fsm.updateOffensive = function()
-		if fsm.current ~= "OFFENSIVE" and fsm.meleeFsm.isAttacking() then
+		if fsm.current ~= "OFFENSIVE" and fsm.attackFsm.isAttacking() then
 			fsm:attack()
-		elseif fsm.current == "OFFENSIVE" and not fsm.meleeFsm.isAttacking() then
+		elseif fsm.current == "OFFENSIVE" and not fsm.attackFsm.isAttacking() then
 			fsm:finishattack()
 		end
 	end
@@ -160,6 +176,10 @@ function M.new(anim_controller, dbgName)
 		if fsm.blackboard[param_move] ~= 0 then
 			sprite.set_hflip("#sprite", fsm.blackboard[param_move] < 0)
 		end
+	end
+
+	fsm.SetWeaponStats = function(weaponStats)
+		fsm.attackFsm.SetWeaponStats(weaponStats)
 	end
 
 	fsm.update = function(dt)
@@ -172,7 +192,9 @@ function M.new(anim_controller, dbgName)
 	end
 
 	fsm.on_message = function(message_id, message, sender)
-		if message_id == msgtype_param or message_id == msgtype_tag then
+		if message_id == hash("weapon_changed") then
+			fsm.SetWeaponStats(message.weaponStats)
+		elseif message_id == msgtype_param or message_id == msgtype_tag then
 			if fsm.blackboard[message.id] ~= nil then		-- to avoid blackboard polution
 				assert(message.value ~= nil)
 				fsm.blackboard[message.id] = message.value

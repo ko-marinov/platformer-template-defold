@@ -20,7 +20,13 @@ end
 function on_message(self, message_id, message, sender)
 	if message_id == hash("collision_response") then
 		if message.other_group == hash("enemy") then
-			msg.post("#property_health", hash("damage"), { damage = 1 })
+			local url = msg.url()
+			url.path = message.other_id
+			url.fragment = "property_health"
+			local enemyHp = go.get(url, "health")
+			if enemyHp > 0 then
+				msg.post("#property_health", hash("damage"), { damage = 1 })
+			end
 		end
 	end
 	self.mv.on_message(message_id, message, sender)

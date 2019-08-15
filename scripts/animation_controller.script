@@ -21,9 +21,9 @@ local function request(self, animId, bForceRestart)
 	end
 
 	if self.currentAnimId then -- if playing anim now, it will be interrupted
-		notify(self.observers, msgtype_anim_event, { id = anim_interrupted, anim = self.currentAnimId })
+		notify(self.observers, msgtype_anim_event, { id = anim_interrupted, animId = self.currentAnimId })
 	end
-	notify(self.observers, msgtype_anim_event, { id = anim_started, anim = anim })
+	notify(self.observers, msgtype_anim_event, { id = anim_started, animId = animId })
 
 	-- WARNING: can't check that hAnim is exists! Register anim list manually?
 	msg.post("#sprite", "play_animation", { id = animId })

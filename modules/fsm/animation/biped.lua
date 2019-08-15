@@ -115,9 +115,11 @@ function M.new(anim_controller, dbgName)
 	end
 
 	fsm.onmessageINJURY = function(message_id, message, sender)
-		if message_id == hash("animation_done") then
-			msg.post(".", msgtype_tag, { id = tag_hurt, value = false })
-			fsm:toidle()
+		if message_id == msgtype_anim_event then
+			if message.id == anim_finished	and message.animId == hash("hurt") then
+				msg.post(".", msgtype_tag, { id = tag_hurt, value = false })
+				fsm:toidle()
+			end
 		end
 	end
 
@@ -126,12 +128,21 @@ function M.new(anim_controller, dbgName)
 		playAnim(fsm, hash("die"))
 	end
 
+	fsm.onbeforedie = function(event, from, to)
+		if fsm.current == "DEATH" then
+			return false
+		end
+		return true
+	end
+
 	----------------------------------------------
 	-- fsm extension 							--
 	-- can be added into module					--
 	----------------------------------------------
 	fsm.abortMelee = function()
-		fsm.attackFsm.abort()
+		if fsm.attackFsm.isAttacking() then
+			fsm.attackFsm.abort()
+		end
 	end
 	
 	fsm.tryDie = function()

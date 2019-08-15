@@ -7,6 +7,21 @@ local moduleAnimFsm = require "modules.fsm.animation.enemy"
 
 function init(self)
 	self.fsm = moduleAnimFsm.new(self.animController)
+	self.fsm.SetWeaponStats({
+		prepTime	= 0.5,									-- time before hit
+		relaxTime	= 0.5,									-- time after hit and before next hit
+		animSet 	= "sword",								-- set of owner's animations
+		animNum 	= 3,									-- number of animations in animation set
+		hitLogic	= function(relaxTransitionClbk, fsm)	-- actions to do on hit
+			local timerClbck = function(self, handle, time_elapsed)
+				msg.post(".", "stop_damage")
+				fsm[relaxTransitionClbk](fsm)
+			end
+
+			timer.delay(0.08, false, timerClbck)
+			msg.post(".", "start_damage")
+		end
+	})
 	msg.post(self.animController, "subscribe_anim")
 end
 

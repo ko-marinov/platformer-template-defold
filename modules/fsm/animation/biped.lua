@@ -58,7 +58,7 @@ function M.new(anim_controller, dbgName)
 	fsm.blackboard[tag_hurt]		= false
 	fsm.blackboard[tag_dead]		= false
 
-	---[[
+	--[[
 	local weaponStats = {
 		prepTime	= 0.5,									-- time before hit
 		relaxTime	= 0.5,									-- time after hit and before next hit
@@ -66,10 +66,12 @@ function M.new(anim_controller, dbgName)
 		animNum 	= 3,									-- number of animations in animation set
 		hitLogic	= function(relaxTransitionClbk, fsm)	-- actions to do on hit
 			local timerClbck = function(self, handle, time_elapsed)
+				msg.post(".", "stop_damage")
 				fsm[relaxTransitionClbk](fsm)
 			end
 
 			timer.delay(0.08, false, timerClbck)
+			msg.post(".", "start_damage")
 		end
 	}
 	--]]
@@ -141,7 +143,7 @@ function M.new(anim_controller, dbgName)
 	----------------------------------------------
 	fsm.abortMelee = function()
 		if fsm.attackFsm.isAttacking() then
-			fsm.attackFsm.abort()
+			fsm.attackFsm.requestAbort()
 		end
 	end
 	

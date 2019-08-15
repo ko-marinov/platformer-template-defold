@@ -1,15 +1,9 @@
 require "modules.common"
 local moduleFsm = require "modules.fsm"
 
-local function reset_attack_tag(fsm)
-	--fsm.attack_anim_in_progress = false
-	msg.post(".", msgtype_tag, { id = tag_attack, value = false })
-end
-
 local function playAnim(fsm, animId)
 	-- when interrupt animation "animation_done" is not come
 	-- so reset all flags manually
-	reset_attack_tag(fsm)
 	msg.post(fsm.anim_controller, "anim_request", { animId = animId })
 end
 
@@ -67,7 +61,7 @@ function M.new(anim_controller, weaponStats, dbgName)
 		fsm:prepare()
 	end
 
-	fsm.abort = function()
+	fsm.requestAbort = function()
 		fsm:abort()
 	end
 
@@ -76,6 +70,10 @@ function M.new(anim_controller, weaponStats, dbgName)
 	end
 
 	-- INTERNAL LOGIC -- --TODO: Mark some code as private by comments - smells
+
+	fsm.onIDLE = function(event, from, to)
+		msg.post(".", msgtype_tag, { id = tag_attack, value = false })
+	end
 
 	fsm.onPREPARATION = function(event, from, to)
 		-- chose animation
@@ -112,6 +110,9 @@ function M.new(anim_controller, weaponStats, dbgName)
 		-- start timer
 		assert(fsm.relaxTimer == timer.INVALID_TIMER_HANDLE)
 		fsm.relaxTimer = timer.delay(fsm.weaponStats.relaxTime, false, fsm.EnterIdleState)
+
+		-- TODO: relax timer is active but anim can be interrupted by walk
+		-- msg.post(".", msgtype_tag, { id = tag_attack, value = false })
 	end
 
 	fsm.EnterHitState = function(self, handle, time_elapsed)

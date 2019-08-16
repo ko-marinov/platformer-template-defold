@@ -1,0 +1,45 @@
+
+local moduleBTree = require "modules.btree"
+
+function init(self)
+	self.distToTarget = 35
+	self.target = "/hero/body"
+	
+	-- TODO: Think about blackboard
+	-- TODO: Think about node params
+	-- TODO: Create common nodes: sleep, move, attack, check pos
+	self.behavior = moduleBTree.create({
+		type = "sequence",
+		children = {
+			function()
+				local target_pos = go.get_position(self.target)
+				local pos = go.get_position()
+				if math.abs(pos.x - target_pos.x) < self.distToTarget then
+					return false, true
+				end
+				
+				if pos.x < target_pos.x then
+					msg.post(".", msgtype_input, { id = input_right })
+				elseif pos.x > target_pos.x then
+					msg.post(".", msgtype_input, { id = input_left })
+				end
+				return true
+			end,
+			function()
+				local target_pos = go.get_position(TARGET)
+				local pos = go.get_position()
+				if vmath.length_sqr(pos - target_pos) < self.distToTarget * self.distToTarget then
+					msg.post(".", msgtype_input, { id = input_attack })
+				end
+				return false, true
+			end,
+			function()
+				-- sleep
+			end
+		}
+	})
+end
+
+function update(self, dt)
+	self.behavior()
+end

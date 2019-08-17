@@ -79,21 +79,6 @@ components {
   }
 }
 components {
-  id: "ai_controller"
-  component: "/scripts/characters/enemy/enemy_ai_controller.script"
-  position {
-    x: 0.0
-    y: 0.0
-    z: 0.0
-  }
-  rotation {
-    x: 0.0
-    y: 0.0
-    z: 0.0
-    w: 1.0
-  }
-}
-components {
   id: "animation_controller"
   component: "/scripts/animation_controller.script"
   position {

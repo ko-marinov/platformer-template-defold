@@ -1,8 +1,6 @@
--- create a table for the module
-local luabt = {}
+local M = {}
 
--- define the create function
-function luabt.create(node)
+local function createUpdateFunction(node)
 	-- execution node
 	if type(node) == "function" then
 		return node
@@ -11,20 +9,20 @@ function luabt.create(node)
 		local children = {}
 		-- recursively construct child nodes
 		for index, child in ipairs(node.children) do
-			children[index] = luabt.create(child)
+			children[index] = createUpdateFunction(child)
 		end
 		if node.type == "negate" then
 			-- return a negate decorator node
-			return function()
+			return function(dt)
 				child = children[1]
-				running, success = child()
+				running, success = child(dt)
 				return running, not success
 			end
 		elseif node.type == "sequence" then
 			-- return a sequence control flow node
-			return function()
+			return function(dt)
 				for index, child in ipairs(children) do
-					running, success = child()
+					running, success = child(dt)
 					if running then
 						return true -- child running
 					elseif success == false then
@@ -35,9 +33,9 @@ function luabt.create(node)
 			end
 		elseif node.type == "selector" then
 			-- return a selector control flow node
-			return function()
+			return function(dt)
 				for index, child in ipairs(children) do
-					running, success = child()
+					running, success = child(dt)
 					if running then
 						return true -- child running
 					elseif success == true then
@@ -50,5 +48,12 @@ function luabt.create(node)
 	end
 end
 
--- return the module
-return luabt
+function M.create(node)
+	local btree = {}
+
+	btree.update = createUpdateFunction(node)
+
+	return btree
+end
+
+return M

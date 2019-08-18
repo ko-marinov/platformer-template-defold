@@ -15,7 +15,7 @@ local function StopRoll(self, handler, time_elapsed)
 end
 
 local function StartRoll(self)
-	msg.post("#property_health", hash("unvulnerable"))
+	msg.post("#property_health", hash("invulnerable"))
 	msg.post(".", msgtype_tag, { id = tag_roll, value = true })
 	self.inRoll = true
 	assert(self.rollTimer == timer.INVALID_TIMER_HANDLE)

@@ -23,6 +23,10 @@ function on_message(self, message_id, message, sender)
 			self.vulnerable = false
 			self.invul_timer = timer.delay(self.invulPeriod, false, InvulTimerCallback)
 		end
+	elseif message_id == hash("vulnerable") then
+		self.vulnerable = true
+	elseif message_id == hash("invulnerable") then
+		self.vulnerable = false
 	elseif message_id == msgtype_check_tag then
 		if message.id == tag_dead then
 			assert(self.health >= 0)

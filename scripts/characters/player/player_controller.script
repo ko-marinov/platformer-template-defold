@@ -1,10 +1,33 @@
+require "modules.common"
+
 go.property("gravity", -700)
 
+local ROLLING_TIME = 0.3
+
 local moduleMovement = require "modules.ground_movement"
+
+local function StopRoll(self, handler, time_elapsed)
+	self.rollTimer = timer.INVALID_TIMER_HANDLE
+	self.inRoll = false
+	msg.post("#property_health", hash("vulnerable"))
+	msg.post(".", msgtype_tag, { id = tag_roll, value = false })
+	self.mv.StopRoll()
+end
+
+local function StartRoll(self)
+	msg.post("#property_health", hash("unvulnerable"))
+	msg.post(".", msgtype_tag, { id = tag_roll, value = true })
+	self.inRoll = true
+	assert(self.rollTimer == timer.INVALID_TIMER_HANDLE)
+	self.rollTimer = timer.delay(ROLLING_TIME, false, StopRoll)
+	self.mv.StartRoll()
+end
 
 function init(self)
 	local offset = vmath.vector3(0, -3, 0)
 	local size = vmath.vector3(20, 30, 0)
+	self.inRoll = false
+	self.rollTimer = timer.INVALID_TIMER_HANDLE
 	self.mv = moduleMovement.new(self.gravity, offset, size)
 	msg.post(".", "acquire_input_focus")
 end
@@ -27,6 +50,11 @@ function on_message(self, message_id, message, sender)
 			if enemyHp > 0 then
 				msg.post("#property_health", hash("damage"), { damage = 1 })
 			end
+		end
+	elseif message_id == msgtype_param then
+		if message.id == param_roll_input and message.value and not self.inRoll then
+			msg.post(".", msgtype_trigger, { id = trigger_roll })
+			StartRoll(self)
 		end
 	end
 	self.mv.on_message(message_id, message, sender)

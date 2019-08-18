@@ -44,7 +44,8 @@ function M.new(anim_controller, dbgName)
 			{ name = "takedamage", 		from = "*", 									to = "INJURY"		},
 			{ name = "die", 			from = "*", 									to = "DEATH" 		},
 			{ name = "land", 			from = "AIRBORNE", 								to = "IDLE" 		},
-			{ name = "toidle",	 		from = "*", 									to = "IDLE" 		}
+			{ name = "toidle",	 		from = "*", 									to = "IDLE" 		},
+			{ name = "roll",			from = { "IDLE", "IN_MOTION" },					to = "ROLL"			}
 		},
 		dbgName = dbgName or "FSM:Anim"
 	})
@@ -97,6 +98,19 @@ function M.new(anim_controller, dbgName)
 		fsm.attackFsm.on_message(message_id, message, sender)
 	end
 
+	fsm.onROLL = function(event, from, to)
+		playAnim(fsm, hash("roll"))
+	end
+
+	-- TODO: watch out, copypaste from INJURY
+	fsm.onmessageROLL = function(message_id, message, sender)
+		if message_id == msgtype_anim_event then
+			if message.id == anim_finished	and message.animId == hash("roll") then
+				fsm:toidle()
+			end
+		end
+	end
+
 	-- on enter state AIRBORNE
 	fsm.onAIRBORNE = function(event, from, to)
 		playAnim(fsm, hash("fall"))
@@ -105,7 +119,7 @@ function M.new(anim_controller, dbgName)
 	-- on enter state INJURY
 	fsm.onINJURY = function(event, from, to)
 		playAnim(fsm, hash("hurt"))
-		msg.post(".", msgtype_tag, { id = tag_hurt, value = true })
+		msg.post(".", msgtype_tag, { id = tag_hurt, value = true })	-- TODO: Post tags from anim fsm is smells?!
 	end
 
 	fsm.onbeforetakedamage = function(event, from, to)
@@ -218,6 +232,8 @@ function M.new(anim_controller, dbgName)
 					fsm:attack()
 				elseif message.id == trigger_damage then
 					fsm:takedamage()
+				elseif message.id == trigger_roll then
+					fsm:roll()
 				end
 			end
 			local messagehandler = "onmessage" .. fsm.current

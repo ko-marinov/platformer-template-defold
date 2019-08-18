@@ -18,22 +18,27 @@ end
 local function update_velocity(mv, dt)
 	local v = mv.velocity
 
-	-- Vertical velocity
-	if mv.ground_contact and v.y <= 0 then
+	if mv.inRoll then
+		v.x = mv.look_dir * MAX_HSPEED * 1.5
 		v.y = 0
 	else
-		v.y = v.y + mv.gravity * dt
-		if v.y < -MAX_VSPEED then
-			v.y = -MAX_VSPEED
+		-- Vertical velocity
+		if mv.ground_contact and v.y <= 0 then
+			v.y = 0
+		else
+			v.y = v.y + mv.gravity * dt
+			if v.y < -MAX_VSPEED then
+				v.y = -MAX_VSPEED
+			end
 		end
-	end
 
-	-- Horizontal velocity
-	-- Control > smoothness
-	if mv.dir == 0 then
-		v.x = 0
-	else
-		v.x = mv.dir * MAX_HSPEED
+		-- Horizontal velocity
+		-- Control > smoothness
+		if mv.dir == 0 then
+			v.x = 0
+		else
+			v.x = mv.dir * MAX_HSPEED
+		end
 	end
 	mv.velocity = v
 end
@@ -81,6 +86,8 @@ function M.new(g, collisionBoxOffset, collisionBoxSize)
 		-- place members here
 		frame_num = 0,
 		dir = 0,
+		look_dir = 0,
+		inRoll = false,
 		correction = vmath.vector3(),
 		velocity = vmath.vector3(0, 0, 0),
 		ground_contact = false,
@@ -88,6 +95,14 @@ function M.new(g, collisionBoxOffset, collisionBoxSize)
 		offset = collisionBoxOffset,
 		size = collisionBoxSize
 	}
+
+	mv.StartRoll = function()
+		mv.inRoll = true
+	end
+
+	mv.StopRoll = function()
+		mv.inRoll = false
+	end
 
 	mv.update = function(dt)
 		update_velocity(mv, dt)
@@ -106,6 +121,9 @@ function M.new(g, collisionBoxOffset, collisionBoxSize)
 		elseif message_id == msgtype_param then
 			if message.id == param_move then
 				mv.dir = message.value
+				if mv.dir ~= 0 then
+					mv.look_dir = mv.dir
+				end
 			end
 		elseif message_id == msgtype_tag then
 			if message.id == tag_grounded then

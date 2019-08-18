@@ -7,18 +7,26 @@ local ATTACK	= hash("ATTACK")
 local FALL		= hash("FALL")
 local HURT		= hash("HURT")
 local JUMP		= hash("JUMP")
+local ROLL		= hash("ROLL")
+
+--[[
+TODO: Refactor input system if realy needed
+1. Allowed actions depends on context (current state) => implies lots of ifs
+2. Input buttons abstraction needed? Pressed/released, tap/hold, double-tap?
+3. Similar checks, procedures for most of inputs, generalize, incapsulate?
+]]
 
 -------------------------------------------------------------
 
 local function isActionPermitted(self, action_id)
 	if self.state == STAY or self.state == RUN then
 		return true
-	elseif self.state == ATTACK then
+	elseif self.state == ATTACK or self.state == ROLL then
 		return false
 	elseif self.state == FALL then
-		return action_id ~= input_attack and action_id ~= input_jump
+		return action_id ~= input_attack and action_id ~= input_jump and action_id ~= input_roll
 	elseif self.state == JUMP then
-		return action_id ~= input_jump
+		return action_id ~= input_attack and action_id ~= input_jump and action_id ~= input_roll
 	end
 
 	return false
@@ -35,6 +43,8 @@ local function processInput(self, action_id, action)
 		self.move_hor = 1
 	elseif action_id == input_attack then
 		self.attack_input = true
+	elseif action_id == input_roll then
+		self.roll_input = true
 	elseif action_id == input_jump then
 		msg.post(".", msgtype_trigger, { id = trigger_jump })
 		-- self.jump_input = action.pressed or action.repeated
@@ -50,8 +60,10 @@ function init(self)
 	self.grounded = nil
 	self.hurt = nil
 	self.attack = nil
+	self.roll = false
 	self.attack_input = false
 	self.jump_input = false
+	self.roll_input = false
 	msg.post(".", msgtype_check_tag, { id = tag_grounded })
 	msg.post(".", msgtype_check_tag, { id = tag_hurt })
 	msg.post(".", msgtype_check_tag, { id = tag_attack })
@@ -66,12 +78,15 @@ function update(self, dt)
 	-- send updates
 	msg.post(".", msgtype_param, { id = param_move, value = self.move_hor })
 	msg.post(".", msgtype_param, { id = param_attack_input, value = self.attack_input })
+	msg.post(".", msgtype_param, { id = param_roll_input, value = self.roll_input })
 
 	-- update input state
 	if self.hurt then
 		self.state = HURT
 	elseif self.attack then
 		self.state = ATTACK
+	elseif self.roll then
+		self.state = ROLL
 	elseif not self.grounded then
 		if self.move_ver > 0 then
 			self.state = JUMP
@@ -88,6 +103,7 @@ function update(self, dt)
 	-- clear
 	self.move_hor = 0
 	self.attack_input = false
+	self.roll_input = false
 end
 
 function on_message(self, message_id, message, sender)
@@ -98,6 +114,8 @@ function on_message(self, message_id, message, sender)
 			self.hurt = message.value
 		elseif message.id == tag_attack then
 			self.attack = message.value
+		elseif message.id == tag_roll then
+			self.roll = message.value
 		end
 	elseif message_id == msgtype_param then
 		if message.id == param_vvel then
